@@ -30,19 +30,30 @@
 -- S1.1. Geslacht
 --
 -- Voeg een kolom `geslacht` toe aan de medewerkerstabel.
+ALTER TABLE medewerkers
+    ADD COLUMN geslacht CHAR(1);
 -- Voeg ook een beperkingsregel `m_geslacht_chk` toe aan deze kolom,
 -- die ervoor zorgt dat alleen 'M' of 'V' als geldige waarde wordt
--- geaccepteerd. Test deze regel en neem de gegooide foutmelding op als
+-- geaccepteerd.
+ALTER TABLE medewerkers
+    ADD CONSTRAINT m_geslacht_chk CHECK (geslacht IN ('M', 'V'));
+-- Test deze regel en neem de gegooide foutmelding op als
 -- commentaar in de uitwerking.
-
+INSERT INTO medewerkers (mnr, naam, voorl, functie, chef, gbdatum, maandsal, comm, geslacht)
+VALUES (1234, 'jo', 'j', 'jjj', 1234, '1990-01-01', 10000, 100, 'X');
 
 -- S1.2. Nieuwe afdeling
 --
 -- Het bedrijf krijgt een nieuwe onderzoeksafdeling 'ONDERZOEK' in Zwolle.
+INSERT INTO afdelingen (anr, naam, locatie, hoofd)
+VALUES (50, 'ONDERZOEK', 'Zwolle', 8000);
 -- Om de onderzoeksafdeling op te zetten en daarna te leiden wordt de
 -- nieuwe medewerker A DONK aangenomen. Hij krijgt medewerkersnummer 8000
 -- en valt direct onder de directeur.
 -- Voeg de nieuwe afdeling en de nieuwe medewerker toe aan de database.
+INSERT INTO medewerkers (mnr, naam, voorl, functie, chef, gbdatum, maandsal, comm)
+VALUES (1234, 'DONK', 'A', 'DIRECTEUR', NULL, '1970-01-01', 5000, NULL);
+
 
 
 -- S1.3. Verbetering op afdelingentabel
@@ -50,16 +61,32 @@
 -- We gaan een aantal verbeteringen doorvoeren aan de tabel `afdelingen`:
 --   a) Maak een sequence die afdelingsnummers genereert. Denk aan de beperking
 --      dat afdelingsnummers veelvouden van 10 zijn.
+CREATE SEQUENCE afdelingen_anr_seq
+    START 10
+INCREMENT 10;
 --   b) Voeg een aantal afdelingen toe aan de tabel, maak daarbij gebruik van
 --      de nieuwe sequence.
+INSERT INTO afdelingen (anr, naam, locatie, hoofd)
+VALUES (nextval('afdelingen_anr_seq'), 'Verkoop', 'Utrecht', 7902);
 --   c) Op enig moment gaat het mis. De betreffende kolommen zijn te klein voor
 --      nummers van 3 cijfers. Los dit probleem op.
+ALTER TABLE afdelingen
+ALTER COLUMN anr TYPE INT;
 
 
 -- S1.4. Adressen
 --
 -- Maak een tabel `adressen`, waarin de adressen van de medewerkers worden
--- opgeslagen (inclusief adreshistorie). De tabel bestaat uit onderstaande
+-- opgeslagen (inclusief adreshistorie).
+CREATE TABLE adressen (
+                          postcode CHAR(6) PRIMARY KEY,
+                          huisnummer INT,
+                          ingangsdatum DATE,
+                          einddatum DATE,
+                          telefoon CHAR(10) UNIQUE,
+                          med_mnr INT REFERENCES medewerkers(mnr)
+);
+-- De tabel bestaat uit onderstaande
 -- kolommen. Voeg minimaal één rij met adresgegevens van A DONK toe.
 --
 --    postcode      PK, bestaande uit 6 karakters (4 cijfers en 2 letters)
@@ -68,12 +95,19 @@
 --    einddatum     moet na de ingangsdatum liggen
 --    telefoon      10 cijfers, uniek
 --    med_mnr       FK, verplicht
-
+INSERT INTO adressen (postcode, huisnummer, ingangsdatum, einddatum, telefoon, med_mnr)
+VALUES ('1234AB', 1, '2023-01-01', NULL, '1234567890', 1234);
 
 -- S1.5. Commissie
 --
 -- De commissie van een medewerker (kolom `comm`) moet een bedrag bevatten als de medewerker een functie als
--- 'VERKOPER' heeft, anders moet de commissie NULL zijn. Schrijf hiervoor een beperkingsregel. Gebruik onderstaande
+-- 'VERKOPER' heeft, anders moet de commissie NULL zijn. Schrijf hiervoor een beperkingsregel.
+ALTER TABLE medewerkers
+    ADD CONSTRAINT comm_check CHECK (
+            (functie = 'VERKOPER' AND comm IS NOT NULL) OR
+            (functie != 'VERKOPER' AND comm IS NULL)
+        );
+-- Gebruik onderstaande
 -- 'illegale' INSERTs om je beperkingsregel te controleren.
 
 INSERT INTO medewerkers (mnr, naam, voorl, functie, chef, gbdatum, maandsal, comm)
