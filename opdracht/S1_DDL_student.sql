@@ -41,18 +41,22 @@ ALTER TABLE medewerkers
 -- commentaar in de uitwerking.
 INSERT INTO medewerkers (mnr, naam, voorl, functie, chef, gbdatum, maandsal, comm, geslacht)
 VALUES (1234, 'jo', 'j', 'jjj', 1234, '1990-01-01', 10000, 100, 'X');
+-- ERROR:  new row for relation "medewerkers" violates check constraint "m_geslacht_chk"
+-- DETAIL:  Failing row contains (1234, jo, j, jjj, 1234, 1990-01-01, 1000.00, 100.00, 10, X).
+-- SQL state: 23514
+
 
 -- S1.2. Nieuwe afdeling
 --
 -- Het bedrijf krijgt een nieuwe onderzoeksafdeling 'ONDERZOEK' in Zwolle.
 INSERT INTO afdelingen (anr, naam, locatie, hoofd)
-VALUES (50, 'ONDERZOEK', 'Zwolle', 8000);
--- Om de onderzoeksafdeling op te zetten en daarna te leiden wordt de
+VALUES (50, 'ONDERZOEK', 'UTRECHT', 7698);
+-- Om de nderzoeksafdeling op te zetten en daarna te leiden wordt de
 -- nieuwe medewerker A DONK aangenomen. Hij krijgt medewerkersnummer 8000
 -- en valt direct onder de directeur.
 -- Voeg de nieuwe afdeling en de nieuwe medewerker toe aan de database.
 INSERT INTO medewerkers (mnr, naam, voorl, functie, chef, gbdatum, maandsal, comm)
-VALUES (1234, 'DONK', 'A', 'DIRECTEUR', NULL, '1970-01-01', 5000, NULL);
+VALUES (8000, 'DONK', 'A', 'DIRECTEUR', NULL, '1970-01-01', 5000, NULL);
 
 
 
@@ -61,8 +65,8 @@ VALUES (1234, 'DONK', 'A', 'DIRECTEUR', NULL, '1970-01-01', 5000, NULL);
 -- We gaan een aantal verbeteringen doorvoeren aan de tabel `afdelingen`:
 --   a) Maak een sequence die afdelingsnummers genereert. Denk aan de beperking
 --      dat afdelingsnummers veelvouden van 10 zijn.
-CREATE SEQUENCE afdelingen_anr_seq
-    START 10
+CREATE SEQUENCE afdelingen_annr_seq
+START 10
 INCREMENT 10;
 --   b) Voeg een aantal afdelingen toe aan de tabel, maak daarbij gebruik van
 --      de nieuwe sequence.
@@ -96,7 +100,7 @@ CREATE TABLE adressen (
 --    telefoon      10 cijfers, uniek
 --    med_mnr       FK, verplicht
 INSERT INTO adressen (postcode, huisnummer, ingangsdatum, einddatum, telefoon, med_mnr)
-VALUES ('1234AB', 1, '2023-01-01', NULL, '1234567890', 1234);
+VALUES ('1234AB', 1, '2023-01-01', NULL, '1234567890', 8000);
 
 -- S1.5. Commissie
 --
