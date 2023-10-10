@@ -29,24 +29,44 @@
 -- S4.1. 
 -- Geef nummer, functie en geboortedatum van alle medewerkers die vóór 1980
 -- geboren zijn, en trainer of verkoper zijn.
--- DROP VIEW IF EXISTS s4_1; CREATE OR REPLACE VIEW s4_1 AS                                                     -- [TEST]
+DROP VIEW IF EXISTS s4_1; CREATE OR REPLACE VIEW s4_1 AS                                                     -- [TEST]
+SELECT medewerkers.mnr, medewerkers.functie, medewerkers.gbdatum FROM medewerkers
+WHERE (DATE_PART('year', gbdatum) < 1980) AND (functie = 'TRAINER' OR functie = 'VERKOPER');
+
 
 
 -- S4.2. 
 -- Geef de naam van de medewerkers met een tussenvoegsel (b.v. 'van der').
--- DROP VIEW IF EXISTS s4_2; CREATE OR REPLACE VIEW s4_2 AS                                                     -- [TEST]
+DROP VIEW IF EXISTS s4_2; CREATE OR REPLACE VIEW s4_2 AS                                                     -- [TEST]
+SELECT  medewerkers.naam FROM medewerkers WHERE medewerkers.naam LIKE '% %';
 
 
 -- S4.3. 
 -- Geef nu code, begindatum en aantal inschrijvingen (`aantal_inschrijvingen`) van alle
 -- cursusuitvoeringen in 2019 met minstens drie inschrijvingen.
--- DROP VIEW IF EXISTS s4_3; CREATE OR REPLACE VIEW s4_3 AS                                                     -- [TEST]
-
+DROP VIEW IF EXISTS s4_3; CREATE OR REPLACE VIEW s4_3 AS                                                     -- [TEST]
+SELECT
+    uitvoeringen.cursus,
+    uitvoeringen.begindatum,
+    COUNT(inschrijvingen.cursist) AS aantal_inschrijvingen
+FROM
+uitvoeringen
+JOIN
+inschrijvingen ON uitvoeringen.cursus = inschrijvingen.cursus and inschrijvingen.begindatum = uitvoeringen.begindatum
+WHERE
+DATE_PART('year', uitvoeringen.begindatum) = 2019
+GROUP BY
+uitvoeringen.cursus, uitvoeringen.begindatum
+HAVING COUNT(inschrijvingen.cursist) >= 3;
 
 -- S4.4. 
 -- Welke medewerkers hebben een bepaalde cursus meer dan één keer gevolgd?
 -- Geef medewerkernummer en cursuscode.
--- DROP VIEW IF EXISTS s4_4; CREATE OR REPLACE VIEW s4_4 AS                                                     -- [TEST]
+DROP VIEW IF EXISTS s4_4; CREATE OR REPLACE VIEW s4_4 AS                                                     -- [TEST]
+SELECT inschrijvingen.cursist AS medewerkernummer, inschrijvingen.cursus AS cursuscode
+FROM inschrijvingen
+GROUP BY inschrijvingen.cursist, inschrijvingen.cursus
+HAVING COUNT(inschrijvingen.cursist) > 1;                                              -- [TEST]
 
 
 -- S4.5. 
@@ -58,7 +78,10 @@
 --   ERM    | 1 
 --   JAV    | 4 
 --   OAG    | 2 
--- DROP VIEW IF EXISTS s4_5; CREATE OR REPLACE VIEW s4_5 AS                                                     -- [TEST]
+DROP VIEW IF EXISTS s4_5; CREATE OR REPLACE VIEW s4_5 AS                                                     -- [TEST]
+SELECT uitvoeringen.cursus, COUNT(*) AS aantal
+FROM uitvoeringen
+GROUP BY uitvoeringen.cursus;                                                -- [TEST]
 
 
 -- S4.6. 
@@ -66,7 +89,11 @@
 -- jongste medewerker (`verschil`) en bepaal de gemiddelde leeftijd van
 -- de medewerkers (`gemiddeld`).
 -- Je mag hierbij aannemen dat elk jaar 365 dagen heeft.
--- DROP VIEW IF EXISTS s4_6; CREATE OR REPLACE VIEW s4_6 AS                                                     -- [TEST]
+DROP VIEW IF EXISTS s4_6; CREATE OR REPLACE VIEW s4_6 AS                                                     -- [TEST]
+SELECT
+        EXTRACT(YEAR FROM MAX(gbdatum)) - EXTRACT(YEAR FROM MIN(gbdatum)) AS verschil,
+        AVG(EXTRACT(YEAR FROM NOW()) - EXTRACT(YEAR FROM gbdatum)) AS gemiddeld
+FROM medewerkers;
 
 
 -- S4.7. 
@@ -74,7 +101,9 @@
 -- er werkt (`aantal_medewerkers`), de gemiddelde commissie die ze
 -- krijgen (`commissie_medewerkers`), en hoeveel dat gemiddeld
 -- per verkoper is (`commissie_verkopers`).
--- DROP VIEW IF EXISTS s4_7; CREATE OR REPLACE VIEW s4_7 AS                                                     -- [TEST]
+DROP VIEW IF EXISTS s4_7; CREATE OR REPLACE VIEW s4_7 AS                                                     -- [TEST]
+SELECT COUNT(medewerkers.mnr) as aantal_medewerkers,sum(comm) / count(*) as commissie_medewerkers,  AVG(comm)AS commissie_verkopers
+FROM medewerkers;
 
 
 

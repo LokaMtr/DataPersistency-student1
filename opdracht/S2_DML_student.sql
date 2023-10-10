@@ -50,11 +50,11 @@ ORDER BY functie, gbdatum ASC;
 --
 -- Welke cursussen zijn in Utrecht en/of in Maastricht uitgevoerd? Geef
 -- code en begindatum.
--- DROP VIEW IF EXISTS s2_3; CREATE OR REPLACE VIEW s2_3 AS                                                     -- [TEST]
-SELECT cursus, begindatum
-FROM uitvoeringen
-WHERE locatie IN ('Utrecht', 'Maastricht');
-
+DROP VIEW IF EXISTS s2_3; CREATE OR REPLACE VIEW s2_3 AS                                                     -- [TEST]
+SELECT cursussen.code, uitvoeringen.begindatum
+FROM cursussen JOIN uitvoeringen ON
+cursussen.code = uitvoeringen.cursus
+WHERE uitvoeringen.locatie = 'UTRECHT' or uitvoeringen.locatie = 'MAASTRICHT';
 
 -- S2.4. Namen
 --
@@ -70,10 +70,10 @@ WHERE naam <> 'Jansen' AND voorl <> 'R';
 -- Er wordt een nieuwe uitvoering gepland voor cursus S02, en wel op de
 -- komende 2 maart. De cursus wordt gegeven in Leerdam door Nick Smit.
 -- Voeg deze gegevens toe.
-INSERT
-ON CONFLICT DO NOTHING;                                                                                         -- [TEST]
 INSERT INTO uitvoeringen (cursus, begindatum, docent, locatie)
-VALUES ('S02', '2023-03-02', '7369', 'Leerdam');
+VALUES ('S02', '2024-03-02', '7369', 'Leerdam');
+ON CONFLICT DO NOTHING;                                                                                         -- [TEST]
+
 
 
 
@@ -81,21 +81,19 @@ VALUES ('S02', '2023-03-02', '7369', 'Leerdam');
 --
 -- Neem één van je collega-studenten aan als stagiair ('STAGIAIR') en
 -- voer zijn of haar gegevens in. Kies een personeelnummer boven de 8000.
-INSERT
-ON CONFLICT DO NOTHING;                                                                                         -- [TEST]
 INSERT INTO medewerkers (mnr, naam, voorl, functie, chef, gbdatum ,maandsal, comm, afd, geslacht)
-VALUES (9001, 'klaas', 'v', 'STAGIAIR', 7902, '1985-12-17', 2000, NULL, '20', null);
-
+VALUES (9002, 'klaas', 'v', 'STAGIAIR', 7902, '1985-12-17', 2000, NULL, '20', null);
+ON CONFLICT DO NOTHING;                                                                                         -- [TEST]
 
 
 -- S2.7. Nieuwe schaal
 --
 -- We breiden het salarissysteem uit naar zes schalen. Voer een extra schaal in voor mensen die
 -- tussen de 3001 en 4000 euro verdienen. Zij krijgen een toelage van 500 euro.
-INSERT
-ON CONFLICT DO NOTHING;                                                                                         -- [TEST]
 INSERT INTO schalen (snr, ondergrens, bovengrens, toelage)
-VALUES (6, 3001, 4000, 500);
+VALUES (7, 3001, 4000, 500);
+ON CONFLICT DO NOTHING;                                                                                         -- [TEST]
+
 
 
 
@@ -104,29 +102,31 @@ VALUES (6, 3001, 4000, 500);
 -- Er wordt een nieuwe 6-daagse cursus 'Data & Persistency' in het programma opgenomen.
 -- Voeg deze cursus met code 'D&P' toe, maak twee uitvoeringen in Leerdam en schrijf drie
 -- mensen in.
-INSERT
-ON CONFLICT DO NOTHING;                                                                                         -- [TEST]
 INSERT INTO cursussen (code, omschrijving, type, lengte)
 VALUES ('D&P', 'Data & Persistency', 'DSG', 6);
-
-
-INSERT
 ON CONFLICT DO NOTHING;                                                                                         -- [TEST]
+
+
 INSERT INTO uitvoeringen (cursus, begindatum, locatie)
 VALUES ('D&P', '2023-09-15', 'Leerdam');
-
-
-INSERT
 ON CONFLICT DO NOTHING;                                                                                         -- [TEST]
+
+
 INSERT INTO uitvoeringen (cursus, begindatum, locatie)
 VALUES ('D&P', '2023-10-20', 'Leerdam');
+ON CONFLICT DO NOTHING;                                                                                         -- [TEST]
 
 
-INSERT
+INSERT into inschrijvingen(cursist, cursus, begindatum, evaluatie)
+values (7499, 'D&P', '2023-09-15', null)
 ON CONFLICT DO NOTHING;                                                                                         -- [TEST]
-INSERT
+
+INSERT into inschrijvingen(cursist, cursus, begindatum, evaluatie)
+values (7934, 'D&P','2023-09-15', null)
 ON CONFLICT DO NOTHING;                                                                                         -- [TEST]
-INSERT
+
+INSERT into inschrijvingen(cursist, cursus, begindatum, evaluatie)
+values (7698,'D&P', '2023-09-15', null)
 ON CONFLICT DO NOTHING;                                                                                         -- [TEST]
 
 
@@ -138,12 +138,13 @@ ON CONFLICT DO NOTHING;                                                         
 
 UPDATE medewerkers
 SET maandsal = maandsal * 1.055
-WHERE afd = 30 AND functie <> 'Manager';
+AND functie != 'MANAGER';
+
 
 
 UPDATE medewerkers
 SET maandsal = maandsal * 1.07
-WHERE afd = 30 AND functie = 'Manager';
+WHERE afd = 30 AND functie = 'MANAGER';
 
 
 
@@ -152,14 +153,14 @@ WHERE afd = 30 AND functie = 'Manager';
 -- Martens heeft als verkoper succes en wordt door de concurrent
 -- weggekocht. Verwijder zijn gegevens.
 DELETE FROM medewerkers
-WHERE naam = 'Martens' AND functie = 'Verkoper';
+WHERE naam = 'Martens' AND functie = 'VERKOPER';
 
 
 -- Zijn collega Alders heeft ook plannen om te vertrekken. Verwijder ook zijn gegevens.
 -- Waarom lukt dit (niet)?
 DELETE FROM medewerkers
 WHERE naam = 'Alders';
--- het is gewoon gelukt ???
+-- omdat hij is ingeschreven bij een cursus
 
 
 -- S2.11. Nieuwe afdeling
@@ -167,11 +168,12 @@ WHERE naam = 'Alders';
 -- Je wordt hoofd van de nieuwe afdeling 'FINANCIEN' te Leerdam,
 -- onder de hoede van De Koning. Kies een personeelnummer boven de 8000.
 -- Zorg voor de juiste invoer van deze gegevens.
-INSERT
+INSERT INTO medewerkers (mnr, naam, voorl, functie, chef, gbdatum, maandsal, comm)
+VALUES (9999, 'MATAR', 'L', 'KONING', NULL, '2004-04-27', 5000, null);
 ON CONFLICT DO NOTHING;                                                                                         -- [TEST]
 
-INSERT
-ON CONFLICT DO NOTHING;                                                                                         -- [TEST]
+INSERT INTO afdelingen (anr, naam, locatie, hoofd) VALUES (70,'FINANCIEN', 'UTRECHT',9999)
+ON CONFLICT DO NOTHING;                                                                                                      -- [TEST]
 
 
 

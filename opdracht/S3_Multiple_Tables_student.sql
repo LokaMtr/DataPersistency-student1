@@ -31,16 +31,16 @@
 -- code, de begindatum, de lengte en de naam van de docent.
 DROP VIEW IF EXISTS s3_1; CREATE OR REPLACE VIEW s3_1 AS                                                     -- [TEST]
 SELECT
-    c.code AS cursus_code,
-    u.begindatum AS begindatum,
-    c.lengte AS cursus_lengte,
-    u.docent AS docent_naam
+    uitvoeringen.cursus,
+    uitvoeringen.begindatum,
+    cursussen.lengte,
+    medewerkers.naam
 FROM
-    cursussen c
+    uitvoeringen
         JOIN
-    uitvoeringen u
-    ON
-            c.code = u.cursus;
+    cursussen ON uitvoeringen.cursus = cursussen.code
+        JOIN
+    medewerkers ON uitvoeringen.docent = medewerkers.mnr;
 
 
 -- S3.2.
@@ -48,24 +48,12 @@ FROM
 -- van alle S02-cursussen, met de achternaam van zijn cursusdocent (`docent`).
 DROP VIEW IF EXISTS s3_2; CREATE OR REPLACE VIEW s3_2 AS                                                     -- [TEST]
 SELECT
-    Cursist.naam AS cursist,
-    Docent.naam AS docent
-FROM
-    public.uitvoeringen Uitvoering
-        JOIN
-    public.medewerkers Cursist
-    ON
-            Uitvoering.docent = Cursist.mnr
-        JOIN
-    public.cursussen Cursus
-    ON
-            Uitvoering.cursus = Cursus.code
-        JOIN
-    public.medewerkers Docent
-    ON
-            Cursus.omschrijving = Docent.naam
-WHERE
-        Cursus.code = 'S02';
+    (SELECT medewerkers.naam FROM medewerkers WHERE medewerkers.mnr = inschrijvingen.cursist) AS "Cursist",
+    (SELECT medewerkers.naam FROM medewerkers WHERE medewerkers.mnr = uitvoeringen.docent) AS "Docent"
+FROM uitvoeringen
+         JOIN inschrijvingen ON uitvoeringen.cursus = inschrijvingen.cursus
+    And inschrijvingen.begindatum = uitvoeringen.begindatum
+WHERE uitvoeringen.cursus = 'S02' ;
 
 
 
@@ -73,61 +61,31 @@ WHERE
 -- Geef elke afdeling (`afdeling`) met de naam van het hoofd van die
 -- afdeling (`hoofd`).
 DROP VIEW IF EXISTS s3_3; CREATE OR REPLACE VIEW s3_3 AS                                                     -- [TEST]
-SELECT
-    a.naam AS afdeling,
-    m.naam AS hoofd
-FROM
-    public.afdelingen a
-        LEFT JOIN
-    public.medewerkers m
-    ON
-            a.hoofd = m.mnr;
+SELECT afdelingen.naam as afd_naam, medewerkers.naam as mdw_naam
+FROM afdelingen
+         JOIN medewerkers ON afdelingen.hoofd = medewerkers.mnr;
 
 
 -- S3.4.
 -- Geef de namen van alle medewerkers, de naam van hun afdeling (`afdeling`)
 -- en de bijbehorende locatie.
 DROP VIEW IF EXISTS s3_4; CREATE OR REPLACE VIEW s3_4 AS                                                     -- [TEST]
-SELECT
-    m.naam AS medewerker_naam,
-    a.naam AS afdeling,
-    a.locatie AS afdeling_locatie
-FROM
-    public.medewerkers m
-        JOIN
-    public.afdelingen a
-    ON
-            m.afd = a.anr;
-
+SELECT  medewerkers.naam as mdw_naam, afdelingen.naam as afd_naam, afdelingen.locatie
+FROM afdelingen
+Join medewerkers on medewerkers.afd = afdelingen.anr;
 
 -- S3.5.
 -- Geef de namen van alle cursisten die staan ingeschreven voor de cursus S02 van 12 april 2019
 DROP VIEW IF EXISTS s3_5; CREATE OR REPLACE VIEW s3_5 AS                                                     -- [TEST]
-SELECT
-    m.naam AS cursist_naam
-FROM
-    public.inschrijvingen i
-        JOIN
-    public.medewerkers m
-    ON
-            i.cursist = m.mnr
-WHERE
-        i.cursus = 'S02'
-  AND i.begindatum = '2019-04-12';
-
-
+SELECT medewerkers.naam FROM medewerkers
+JOIN inschrijvingen ON medewerkers.mnr = inschrijvingen.cursist
+WHERE inschrijvingen.cursus = 'S02' and inschrijvingen.begindatum = '2019-04-12';
 -- S3.6.
 -- Geef de namen van alle medewerkers en hun toelage.
-SELECT
-    m.naam AS medewerker_naam,
-    COALESCE(s.toelage, 0.00) AS toelage
-FROM
-    public.medewerkers m
-        LEFT JOIN
-    public.schalen s
-    ON
-        m.maandsal BETWEEN s.ondergrens AND s.bovengrens;
-
+DROP VIEW IF EXISTS s3_6; CREATE OR REPLACE VIEW s3_6 AS                                                     -- [TEST]
+SELECT medewerkers.naam, schalen.toelage
+FROM medewerkers
+JOIN schalen ON medewerkers.maandsal <= schalen.bovengrens and medewerkers.maandsal >= schalen.ondergrens;
 
 
 

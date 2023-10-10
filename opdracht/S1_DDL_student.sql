@@ -40,7 +40,7 @@ ALTER TABLE medewerkers
 -- Test deze regel en neem de gegooide foutmelding op als
 -- commentaar in de uitwerking.
 INSERT INTO medewerkers (mnr, naam, voorl, functie, chef, gbdatum, maandsal, comm, geslacht)
-VALUES (1234, 'jo', 'j', 'jjj', 1234, '1990-01-01', 10000, 100, 'X');
+VALUES (9000, 'jo', 'j', 'jjj', 7698, '1990-01-01', 1000, null, 'M');
 -- ERROR:  new row for relation "medewerkers" violates check constraint "m_geslacht_chk"
 -- DETAIL:  Failing row contains (1234, jo, j, jjj, 1234, 1990-01-01, 1000.00, 100.00, 10, X).
 -- SQL state: 23514
@@ -71,11 +71,11 @@ INCREMENT 10;
 --   b) Voeg een aantal afdelingen toe aan de tabel, maak daarbij gebruik van
 --      de nieuwe sequence.
 INSERT INTO afdelingen (anr, naam, locatie, hoofd)
-VALUES (nextval('afdelingen_anr_seq'), 'Verkoop', 'Utrecht', 7902);
+VALUES (60, 'SALES', 'UTRECHT', 7698);
 --   c) Op enig moment gaat het mis. De betreffende kolommen zijn te klein voor
 --      nummers van 3 cijfers. Los dit probleem op.
 ALTER TABLE afdelingen
-ALTER COLUMN anr TYPE INT;
+ALTER COLUMN anr TYPE numeric(10, 0);
 
 
 -- S1.4. Adressen
@@ -115,10 +115,10 @@ ALTER TABLE medewerkers
 -- 'illegale' INSERTs om je beperkingsregel te controleren.
 
 INSERT INTO medewerkers (mnr, naam, voorl, functie, chef, gbdatum, maandsal, comm)
-VALUES (8001, 'MULLER', 'TJ', 'TRAINER', 7566, '1982-08-18', 2000, 500);
+VALUES (8001, 'MULLER', 'TJ', 'TRAINER', 7566, '1982-08-18', 2000, NULL);
 
 INSERT INTO medewerkers (mnr, naam, voorl, functie, chef, gbdatum, maandsal, comm)
-VALUES (8002, 'JANSEN', 'M', 'VERKOPER', 7698, '1981-07-17', 1000, NULL);
+VALUES (8002, 'JANSEN', 'M', 'VERKOPER', 7698, '1981-07-17', 1000, 10);
 
 
 
@@ -136,6 +136,7 @@ SELECT * FROM test_exists('S1.4', 6) AS resultaat
 UNION
 SELECT 'S1.5 wordt niet getest: handmatige test beschikbaar.' AS resultaat
 ORDER BY resultaat;
+
 
 
 -- Draai alle wijzigingen terug om conflicten in komende opdrachten te voorkomen.
